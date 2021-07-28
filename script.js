@@ -10,6 +10,7 @@ const inputElevation = document.querySelector('.form__input--elevation');
 class App {
   #map;
   #mapEvent;
+  #mapZoomLevel = 13;
   #workouts = [];
   constructor() {
     // Get position from browser, load map, open form with map click
@@ -18,6 +19,8 @@ class App {
     form.addEventListener('submit', this._newWorkout.bind(this));
     // Toggel running/cycling on form
     inputType.addEventListener('change', this._toggleElevationField);
+    // Add event listener to detect click on a workout
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
 
   _getPosition() {
@@ -191,12 +194,34 @@ class App {
 
     form.insertAdjacentHTML('afterend', html);
   }
+
+  _moveToPopup(e) {
+    const workoutEl = e.target.closest('.workout');
+    console.log(workoutEl);
+
+    if (!workoutEl) return;
+
+    const workout = this.#workouts.find(
+      (work) => work.id === workoutEl.dataset.id
+    );
+    console.log(workout);
+
+    this.#map.setView(workout.coords, this.#mapZoomLevel, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
+
+    // using the public in
+    workout.click();
+  }
 }
 
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
-
+  clicks = 0;
   constructor(coords, distance, duration) {
     this.coords = coords; // [lat, lng]
     this.distance = distance; //in km
@@ -216,6 +241,10 @@ class Workout {
     //km/h
     this.speed = this.distance / (this.duration / 60);
     return this.speed;
+  }
+
+  click() {
+    this.clicks++;
   }
 }
 
