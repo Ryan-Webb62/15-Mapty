@@ -15,6 +15,8 @@ class App {
   constructor() {
     // Get position from browser, load map, open form with map click
     this._getPosition();
+    // Get data from local storage
+    this._getLocalStorage();
     // Add workout with form submission & display marker and popup
     form.addEventListener('submit', this._newWorkout.bind(this));
     // Toggel running/cycling on form
@@ -49,6 +51,11 @@ class App {
 
     // Handling clicks on map
     this.#map.on('click', this._showForm.bind(this));
+
+    // Render markers from local storage
+    this.#workouts.forEach((work) => {
+      this._renderWorkoutMarker(work);
+    });
   }
 
   _showForm(mapE) {
@@ -81,7 +88,7 @@ class App {
     // If activity running, create running object
     if (type === 'running') {
       const cadence = +inputCadence.value;
-      console.log(type, distance, duration, cadence);
+
       if (
         !validInputs(distance, duration, cadence) ||
         !allPositive(distance, duration, cadence)
@@ -92,7 +99,6 @@ class App {
     }
     // It actvity cycling, create cycling object
     if (type === 'cycling') {
-      console.log(`${type}`);
       const elevation = +inputElevation.value;
       if (
         !validInputs(distance, duration, elevation) ||
@@ -111,6 +117,13 @@ class App {
     this._renderWorkout(workout);
     //Hide form + clear input fields
     this._hideForm();
+
+    // Set local storage to all workouts
+    this._setLocalStorage();
+  }
+
+  _setLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
   }
 
   _renderWorkoutMarker(workout) {
@@ -197,14 +210,12 @@ class App {
 
   _moveToPopup(e) {
     const workoutEl = e.target.closest('.workout');
-    console.log(workoutEl);
 
     if (!workoutEl) return;
 
     const workout = this.#workouts.find(
       (work) => work.id === workoutEl.dataset.id
     );
-    console.log(workout);
 
     this.#map.setView(workout.coords, this.#mapZoomLevel, {
       animate: true,
@@ -214,7 +225,23 @@ class App {
     });
 
     // using the public in
-    workout.click();
+    // workout.click();
+  }
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+
+    if (!data) return;
+
+    this.#workouts = data;
+
+    this.#workouts.forEach((work) => {
+      this._renderWorkout(work);
+    });
+  }
+  reset() {
+    localStorage.removeItem('workouts');
+    // Browser object that allows reloading of the page
+    location.reload();
   }
 }
 
